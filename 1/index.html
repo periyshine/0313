@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 居家生活助手</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f5f0eb;
+    --bg-card: #ffffff;
+    --primary: #e07a5f;
+    --primary-light: #f2a68d;
+    --primary-dark: #c4563d;
+    --accent: #81b29a;
+    --accent-light: #a8d5ba;
+    --text: #3d405b;
+    --text-light: #6b6e8a;
+    --text-muted: #9a9bb0;
+    --border: #e8e3de;
+    --shadow: 0 4px 24px rgba(61,64,91,.08);
+    --shadow-lg: 0 12px 40px rgba(61,64,91,.12);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* 背景装饰 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(224,122,95,.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px; left: -150px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(129,178,154,.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* 主容器 */
+  .app {
+    width: 100%;
+    max-width: 480px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--bg);
+  }
+
+  /* 顶部导航 */
+  .header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+  }
+  .header-avatar {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px;
+    box-shadow: 0 4px 12px rgba(224,122,95,.3);
+  }
+  .header-info h1 { font-size: 17px; font-weight: 600; color: var(--text); }
+  .header-info p { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+  .header-info .online-dot {
+    width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(.8); }
+  }
+  .header-action {
+    margin-left: auto;
+    width: 36px; height: 36px;
+    border: none; background: var(--bg);
+    border-radius: 10px;
+    color: var(--text-light);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .header-action:hover { background: var(--border); color: var(--text); }
+
+  /* 聊天区域 */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* 欢迎界面 */
+  .welcome {
+    text-align: center;
+    padding: 20px 10px 10px;
+  }
+  .welcome-icon {
+    width: 72px; height: 72px;
+    margin: 0 auto 14px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 32px;
+    box-shadow: 0 8px 24px rgba(224,122,95,.25);
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .welcome h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .welcome p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* 分类快捷入口 */
+  .categories {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 20px 0 24px;
+  }
+  .cat-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .25s;
+  }
+  .cat-btn:hover {
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .cat-btn:active { transform: translateY(0); }
+  .cat-btn .icon {
+    width: 38px; height: 38px;
+    margin: 0 auto 8px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .cat-btn span { font-size: 11px; color: var(--text-light); font-weight: 500; }
+  .cat-btn.cook .icon  { background: #fff0ed; color: var(--primary); }
+  .cat-btn.clean .icon { background: #edf8f3; color: #3aad8a; }
+  .cat-btn.health .icon { background: #eef0ff; color: #6366f1; }
+  .cat-btn.org .icon   { background: #fff8ed; color: #f59e0b; }
+  .cat-btn.plant .icon { background: #edfbe8; color: #22c55e; }
+  .cat-btn.pet .icon   { background: #fef3f2; color: #ef4444; }
+  .cat-btn.buy .icon   { background: #f0f4ff; color: #3b82f6; }
+  .cat-btn.tips .icon  { background: #fdf2f8; color: #ec4899; }
+
+  /* 热门问题 */
+  .hot-questions { margin-bottom: 16px; }
+  .hot-questions h3 {
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    margin-bottom: 10px; padding-left: 4px;
+  }
+  .hot-list { display: flex; flex-direction: column; gap: 8px; }
+  .hot-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .hot-item:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow);
+  }
+  .hot-item .hot-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #fff0ed, #fff8f5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--primary);
+    flex-shrink: 0;
+  }
+  .hot-item .hot-text { flex: 1; }
+  .hot-item .hot-arrow { color: var(--text-muted); font-size: 11px; }
+
+  /* 消息气泡 */
+  .msg { display: flex; gap: 10px; margin-bottom: 16px; animation: msgIn .4s ease; }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .msg.bot .msg-avatar {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+  }
+  .msg.user .msg-avatar {
+    background: #eef0ff;
+    color: #6366f1;
+  }
+  .msg-bubble {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .msg.bot .msg-bubble {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+  .msg.user .msg-bubble {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    border-top-right-radius: 4px;
+  }
+  .msg-time {
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  /* AI 回复中的指引卡片 */
+  .guide-card {
+    background: linear-gradient(135deg, #fef9f7, #f0faf5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin: 10px 0 4px;
+    overflow: hidden;
+  }
+  .guide-card-title {
+    padding: 10px 14px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.7);
+  }
+  .guide-card-title i { color: var(--primary); }
+  .guide-steps { padding: 6px 0; }
+  .guide-step {
+    padding: 8px 14px;
+    display: flex; gap: 10px;
+    align-items: flex-start;
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.6;
+  }
+  .guide-step-num {
+    width: 22px; height: 22px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .guide-tip {
+    padding: 10px 14px;
+    background: rgba(129,178,154,.08);
+    border-top: 1px dashed #d4ddd8;
+    font-size: 12px;
+    color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+    line-height: 1.5;
+  }
+  .guide-tip i { flex-shrink: 0; }
+
+  /* 标签 */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+  .tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .tag.red   { background: #fff0ed; color: var(--primary-dark); }
+  .tag.green { background: #edf8f3; color: #22a06b; }
+  .tag.blue  { background: #eef0ff; color: #6366f1; }
+
+  /* 输入区域 */
+  .input-area {
+    padding: 12px 16px 28px;
+    background: rgba(255,255,255,.9);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+  }
+  .quick-tags {
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    scrollbar-width: none;
+  }
+  .quick-tags::-webkit-scrollbar { display: none; }
+  .quick-tag {
+    padding: 5px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-light);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+  }
+  .quick-tag:hover { border-color: var(--primary); color: var(--primary); }
+  .input-row {
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .input-wrap {
+    flex: 1;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 22px;
+    display: flex; align-items: flex-end;
+    padding: 4px 4px 4px 16px;
+    transition: border-color .2s;
+  }
+  .input-wrap:focus-within { border-color: var(--primary-light); }
+  .input-wrap textarea {
+    flex: 1;
+    border: none; outline: none;
+    background: transparent;
+    font-family: inherit; font-size: 14px;
+    color: var(--text);
+    resize: none;
+    min-height: 36px;
+    max-height: 100px;
+    padding: 6px 0;
+    line-height: 1.5;
+  }
+  .input-wrap textarea::placeholder { color: var(--text-muted); }
+  .send-btn {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: none; border-radius: 50%;
+    color: #fff; font-size: 15px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(224,122,95,.4); }
+  .send-btn:active { transform: scale(.95); }
+  .send-btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
+
+  /* 打字指示器 */
+  .typing { display: flex; gap: 4px; padding: 4px 0; }
+  .typing span {
+    width: 7px; height: 7px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* 隐藏欢迎界面 */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- 顶部 -->
+  <div class="header">
+    <div class="header-avatar"><i class="fas fa-home"></i></div>
+    <div class="header-info">
+      <h1>居家生活助手</h1>
+      <p><span class="online-dot"></span> 智能为你服务中</p>
+    </div>
+    <button class="header-action" id="clearBtn" title="清空对话"><i class="fas fa-rotate-right"></i></button>
+  </div>
+
+  <!-- 聊天区 -->
+  <div class="chat-area" id="chatArea">
+    <!-- 欢迎界面 -->
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon"><i class="fas fa-robot"></i></div>
+      <h2>你好，有什么可以帮你？</h2>
+      <p>告诉我你的居家需求，我来为你生成<br>贴心、实用的生活指引</p>
+    </div>
+
+    <div class="categories" id="categories">
+      <div class="cat-btn cook" data-q="今天不知道做什么菜，帮我推荐几道家常菜">
+        <div class="icon"><i class="fas fa-utensils"></i></div><span>美食推荐</span>
+      </div>
+      <div class="cat-btn clean" data-q="家里比较脏了，帮我制定一个全屋大扫除计划">
+        <div class="icon"><i class="fas fa-broom"></i></div><span>清洁整理</span>
+      </div>
+      <div class="cat-btn health" data-q="最近总觉得身体疲劳，有什么居家养生建议？">
+        <div class="icon"><i class="fas fa-heart-pulse"></i></div><span>健康养生</span>
+      </div>
+      <div class="cat-btn org" data-q="家里东西太多太乱，帮我整理收纳">
+        <div class="icon"><i class="fas fa-boxes-stacked"></i></div><span>收纳整理</span>
+      </div>
+      <div class="cat-btn plant" data-q="买了一盆绿萝回来，怎么养护好它？">
+        <div class="icon"><i class="fas fa-seedling"></i></div><span>绿植养护</span>
+      </div>
+      <div class="cat-btn pet" data-q="想养一只猫，新手养猫需要注意什么？">
+        <div class="icon"><i class="fas fa-paw"></i></div><span>宠物照顾</span>
+      </div>
+      <div class="cat-btn buy" data-q="家里快没日用品了，帮我列一份采购清单">
+        <div class="icon"><i class="fas fa-cart-shopping"></i></div><span>采购清单</span>
+      </div>
+      <div class="cat-btn tips" data-q="夏天快到了，有什么居家省电妙招？">
+        <div class="icon"><i class="fas fa-lightbulb"></i></div><span>生活妙招</span>
+      </div>
+    </div>
+
+    <div class="hot-questions" id="hotQuestions">
+      <h3><i class="fas fa-fire"></i> 热门需求</h3>
+      <div class="hot-list">
+        <div class="hot-item" data-q="空调滤网怎么清洗？">空调滤网怎么清洗？</div>
+        <div class="hot-item" data-q="衣服沾了油渍怎么去除？">衣服沾了油渍怎么去除？</div>
+        <div class="hot-item" data-q="厨房下水道堵塞了怎么疏通？">厨房下水道堵塞了怎么疏通？</div>
+        <div class="hot-item" data-q="怎样让家里蚊子变少？">怎样让家里蚊子变少？</div>
+      </div>
+    </div>
+
+    <!-- 消息会插入这里 -->
+    <div id="msgContainer"></div>
+  </div>
+
+  <!-- 输入区域 -->
+  <div class="input-area">
+    <div class="quick-tags">
+      <span class="quick-tag" data-q="今天吃什么">今天吃什么</span>
+      <span class="quick-tag" data-q="怎么去除异味">去除异味</span>
+      <span class="quick-tag" data-q="收纳技巧">收纳技巧</span>
+      <span class="quick-tag" data-q="家里太热了怎么办">家里太热了</span>
+      <span class="quick-tag" data-q="垃圾分类指南">垃圾分类</span>
+      <span class="quick-tag" data-q="除虫灭蟑螂">除虫灭蟑螂</span>
+    </div>
+    <div class="input-row">
+      <div class="input-wrap">
+        <textarea id="userInput" rows="1" placeholder="描述你的居家需求..."></textarea>
+        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chatArea');
+const msgContainer = document.getElementById('msgContainer');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const welcome = document.getElementById('welcome');
+const categories = document.getElementById('categories');
+const hotQuestions = document.getElementById('hotQuestions');
+const clearBtn = document.getElementById('clearBtn');
+
+// 自适应输入框高度
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+});
+
+// 发送
+sendBtn.addEventListener('click', handleSend);
+userInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+});
+
+// 各快捷入口
+document.querySelectorAll('[data-q]').forEach(el => {
+  el.addEventListener('click', () => sendMessage(el.dataset.q));
+});
+
+// 清空
+clearBtn.addEventListener('click', () => {
+  msgContainer.innerHTML = '';
+  welcome.classList.remove('hidden');
+  categories.classList.remove('hidden');
+  hotQuestions.classList.remove('hidden');
+});
+
+function handleSend() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  sendMessage(text);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+}
+
+function hideWelcome() {
+  welcome.classList.add('hidden');
+  categories.classList.add('hidden');
+  hotQuestions.classList.add('hidden');
+}
+
+function getNow() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function appendHtml(html, cls) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.innerHTML = html;
+  msgContainer.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  return appendHtml(
+    `<div class="msg-avatar"><i class="fas fa-robot"></i></div>
+     <div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`,
+    'bot'
+  );
+}
+
+function sendMessage(text) {
+  hideWelcome();
+  appendHtml(
+    `<div class="msg-avatar"><i class="fas fa-user"></i></div>
+     <div class="msg-bubble">${escapeHtml(text)}</div>`,
+    'user'
+  );
+
+  const typingEl = showTyping();
+  const delay = 600 + Math.random() * 1000;
+
+  setTimeout(() => {
+    typingEl.remove();
+    const reply = generateReply(text);
+    appendHtml(
+      `<div class="msg-avatar"><i class="fas fa-robot"></i></div>
+       <div class="msg-bubble">${reply}</div>
+       <div class="msg-time">${getNow()}</div>`,
+      'bot'
+    );
+  }, delay);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ============ 智能回复生成 ============
+function generateReply(q) {
+  const k = q.toLowerCase();
+
+  // 含义匹配
+  if (/吃什么|做什么菜|菜谱|推荐.*菜|不知道.*做|晚餐|午餐|早餐/.test(k)) return replyCooking();
+  if (/清洁|打扫|大扫除|卫生|拖地|擦/.test(k)) return replyCleaning();
+  if (/疲劳|养生|健康|睡眠|失眠|颈椎|腰痛|头疼/.test(k)) return replyHealth();
+  if (/收纳|整理|东西.*乱|太乱|杂|空间/.test(k)) return replyOrganize();
+  if (/绿萝|植物|养花|浇水|盆栽|多肉|花/.test(k)) return replyPlant();
+  if (/养猫|养狗|宠物|猫|狗/.test(k)) return replyPet();
+  if (/采购|购物|清单|日用品|缺/.test(k)) return replyShopping();
+  if (/省电|妙招|生活.*技巧|小窍门|去除异味|异味|蚊子|蟑螂|虫/.test(k)) return replyTips(k);
+  if (/空调|滤网|清洗.*电/.test(k)) return replyAircon();
+  if (/油渍|衣.*脏|洗.*衣|污渍|染色/.test(k)) return replyStain();
+  if (/下水道|堵|管道|疏通/.test(k)) return replyDrain();
+  if (/垃圾.*分类|分类/.test(k)) return replyGarbage();
+  if (/太热|降温|凉快|避暑/.test(k)) return replyCool();
+  if (/除虫|灭蟑|蟑螂|老鼠|蚂蚁/.test(k)) return replyPest();
+
+  // 默认回复
+  return `
+    <p>感谢你的提问！关于「${escapeHtml(q)}」，这里有一些建议：</p>
+    <div style="margin:10px 0">
+      <div class="guide-card">
+        <div class="guide-card-title"><i class="fas fa-wand-magic-sparkles"></i> 便捷指引</div>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="guide-step-num">1</span><span>先了解问题的具体原因，对症下药效果更好</span></div>
+          <div class="guide-step"><span class="guide-step-num">2</span><span>准备好需要的工具和材料</span></div>
+          <div class="guide-step"><span class="guide-step-num">3</span><span>按照步骤操作，注意安全</span></div>
+          <div class="guide-step"><span class="guide-step-num">4</span><span>完成后做好日常维护，防止问题再次出现</span></div>
+        </div>
+        <div class="guide-tip"><i class="fas fa-circle-info"></i> 如果以上建议不够具体，请换个更详细的方式描述你的问题，我会给你更精准的指引。</div>
+      </div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">居家技巧</span>
+      <span class="tag green">实用生活</span>
+    </div>`;
+}
+
+// --- 各场景回复 ---
+function replyCooking() {
+  const dishes = [
+    { name: '西红柿炒鸡蛋', time: '10 分钟', icon: '🍳' },
+    { name: '蒜蓉西兰花', time: '8 分钟', icon: '🥦' },
+    { name: '可乐鸡翅', time: '25 分钟', icon: '🍗' },
+  ];
+  return `
+    <p>来几道简单又好吃的家常菜推荐吧，新手也能轻松搞定！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-fire-burner"></i> 今日推荐菜谱</div>
+      <div class="guide-steps">
+        ${dishes.map((d,i) => `
+          <div class="guide-step">
+            <span class="guide-step-num">${i+1}</span>
+            <span><strong>${d.icon} ${d.name}</strong>（${d.time}）<br>
+            ${i===0?'西红柿切块、鸡蛋打散，先炒蛋盛出再炒西红柿，合在一起翻炒调味。':''}
+            ${i===1?'西兰花焯水捞出，锅中爆香蒜末，放入西兰花翻炒加盐和蚝油即可。':''}
+            ${i===2?'鸡翅划刀焯水，锅中放鸡翅煎至金黄，倒入可乐没过鸡翅，加生抽和姜，大火收汁。':''}
+            </span>
+          </div>`).join('')}
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 搭配一碗白米饭或小米粥，营养又美味。想看更多菜谱可以继续问我哦！</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">家常美食</span>
+      <span class="tag green">简单快手</span>
+      <span class="tag blue">新手友好</span>
+    </div>`;
+}
+
+function replyCleaning() {
+  return `
+    <p>为你制定了一套高效的全屋清洁计划，按区域分步完成，不重复劳动！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-broom"></i> 全屋清洁计划</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>开窗通风</strong> — 打开所有窗户，让空气流通，减少灰尘飞舞</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>卧室</strong> — 更换床单被套，整理衣柜，擦拭桌面和窗台，用吸尘器清理床垫</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>客厅</strong> — 收拾杂物，擦拭茶几和电视柜，拖地或吸尘，整理沙发靠垫</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>厨房</strong> — 清洗油烟机和灶台，擦拭橱柜内外，整理冰箱食材，清洁水槽</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>卫生间</strong> — 清洁马桶和淋浴间，擦拭镜面，清洗浴帘和地垫，检查下水口</span></div>
+        <div class="guide-step"><span class="guide-step-num">6</span><span><strong>阳台</strong> — 清扫地面，整理晾衣架，擦拭栏杆和花盆</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 小技巧：清洁时自上而下、由里到外，避免重复擦拭。小苏打 + 白醋是万能清洁搭档！</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">全屋清洁</span>
+      <span class="tag green">高效分区</span>
+    </div>`;
+}
+
+function replyHealth() {
+  return `
+    <p>居家养生重在作息规律和日常调养，以下是为你整理的实用建议：</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-heart-pulse"></i> 居家养生指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>规律作息</strong> — 晚上 11 点前入睡，保证 7-8 小时睡眠，午休 20 分钟恢复精力</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>饮食调养</strong> — 多吃粗粮蔬菜，少吃油炸和重口味食物，每天饮水量 1500-2000ml</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>居家运动</strong> — 每天 30 分钟轻度运动：瑜伽、拉伸、散步或八段锦，缓解肩颈疲劳</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>穴位按摩</strong> — 每天按揉涌泉穴、足三里、合谷穴各 2 分钟，助眠又养生</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>环境调节</strong> — 保持室内通风，温度 24-26°C，湿度 50-60% 最舒适</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 推荐：晚上睡前泡脚 15 分钟（水温 40°C 左右），加几片生姜效果更佳，有助于改善睡眠质量。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag green">健康养生</span>
+      <span class="tag blue">舒适生活</span>
+    </div>`;
+}
+
+function replyOrganize() {
+  return `
+    <p>收纳的关键是「分类 + 断舍离 + 归位」，下面是一套完整的收纳整理方法：</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-boxes-stacked"></i> 收纳整理指引</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>断舍离</strong> — 把一年以上没用的物品分为"扔掉"、"捐赠"、"保留"三类</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>按区域分类</strong> — 衣物、书籍、厨房用品、杂物分别归入对应区域</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>善用收纳工具</strong> — 收纳箱、挂袋、分隔盒能让空间利用率翻倍</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>竖直收纳法</strong> — 衣物折叠后竖着放入抽屉，一目了然且节省空间</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>每件物品有固定位置</strong> — 用完随手归位，养成习惯就不容易乱了</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 记住收纳黄金法则：80% 隐藏 + 20% 展示。常用的放外面方便拿取，不常用的收纳进柜子。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">收纳方法</span>
+      <span class="tag green">空间利用</span>
+      <span class="tag blue">断舍离</span>
+    </div>`;
+}
+
+function replyPlant() {
+  return `
+    <p>居家绿植养护其实很简单，掌握几个要点就能让你的植物绿意盎然！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-seedling"></i> 绿植养护指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>浇水</strong> — 遵循"见干见湿"原则：土壤表面干了再浇，浇就要浇透</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>光照</strong> — 大部分绿植喜欢明亮散射光，避免暴晒（尤其是夏天中午）</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>通风</strong> — 保持良好通风可以预防病虫害，但也别让植物对着空调直吹</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>施肥</strong> — 生长期（春夏）每两周施一次稀薄液肥，冬季暂停施肥</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>修剪</strong> — 及时剪掉黄叶枯枝，促进新芽生长</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 绿萝特别适合新手：耐阴、不怕水，每周浇水 1-2 次就能长得很好。水培土培都可以！</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag green">绿植养护</span>
+      <span class="tag blue">新手友好</span>
+    </div>`;
+}
+
+function replyPet() {
+  return `
+    <p>新手养猫/养狗需要准备的东西和注意事项，都已整理好啦！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-paw"></i> 新手养宠指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>必需准备</strong> — 食盆水盆、猫砂盆/狗厕所、主粮、零食玩具、航空箱</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>到家适应</strong> — 给它独处空间，不要急于互动，让它慢慢熟悉新环境</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>饮食要点</strong> — 选择适龄猫/狗粮，幼崽每天 3-4 餐，成猫/犬每天 1-2 餐</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>定期体检</strong> — 领养后一周内到宠物医院体检，按时接种疫苗和驱虫</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>安全防护</strong> — 封好门窗阳台，收好电线、药品、巧克力等危险物品</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 前一两周是适应期，耐心等待。多观察它的精神状态和排便情况，有异常及时就医。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">宠物养护</span>
+      <span class="tag green">新手必看</span>
+    </div>`;
+}
+
+function replyShopping() {
+  return `
+    <p>这里准备了一份居家常用采购清单，分门别类很清晰，缺什么勾什么！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-cart-shopping"></i> 居家采购清单</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>清洁用品</strong> — 洗衣液、洗碗精、洁厕灵、垃圾袋、抹布、厨房纸</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>洗护日用</strong> — 沐浴露、洗发水、牙膏牙刷、毛巾、纸巾、棉签</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>厨房食材</strong> — 米面粮油、鸡蛋、牛奶、调味品、常用蔬菜水果</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>家居消耗</strong> — 电池、灯泡、保鲜膜/袋、创可贴、常备药品</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>季节用品</strong> — 根据时令添置驱蚊液/暖宝宝/雨具等</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 建议建立一个家庭物资清单，定期检查（每周或每两周），快用完时及时补货。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag blue">采购清单</span>
+      <span class="tag green">实用全面</span>
+    </div>`;
+}
+
+function replyTips(k) {
+  if (/异味/.test(k)) return replyOdor();
+  if (/蚊子/.test(k)) return replyMosquito();
+  if (/蟑螂|虫/.test(k)) return replyPest();
+  return `
+    <p>给你分享一些实用的居家生活妙招，简单又好用！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-lightbulb"></i> 生活妙招集锦</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>冰箱除味</strong> — 放一卷卫生纸或橘子皮在冰箱里，能吸附异味</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>纱窗清洁</strong> — 用报纸沾湿水贴在纱窗上，5 分钟后揭下，灰尘就粘走了</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>水壶除垢</strong> — 加白醋和水煮沸 15 分钟，水垢轻松去除</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>省电技巧</strong> — 空调温度设 26°C，风扇配合能省电 30%；随手关灯关待机电器</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>拖地更快干</strong> — 温水中加一点盐或白醋拖地，地面干得又快又亮</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 生活处处有妙招，遇到问题随时问我，我帮你找到最方便的解决方法！</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">生活妙招</span>
+      <span class="tag green">省心省力</span>
+    </div>`;
+}
+
+function replyAircon() {
+  return `
+    <p>清洗空调滤网很简单自己就能搞定，而且定期清洗能省电又健康！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-wind"></i> 空调滤网清洗步骤</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>断电</strong> — 拔掉空调电源插头，确保安全</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>打开面板</strong> — 打开空调正面面板，向上掀起找到滤网卡扣</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>取出滤网</strong> — 轻轻按住卡扣取出滤网，注意不要掰断</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>清洗</strong> — 用清水冲去灰尘，顽固污渍可用中性洗涤剂刷洗（切勿用硬毛刷）</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>晾干装回</strong> — 自然晾干（不要暴晒或用热风吹），确认完全干燥后装回</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 建议每 2 周清洗一次滤网，换季使用前清洗效果最好。清洗后空调制冷效果明显提升！</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">空调保养</span>
+      <span class="tag green">省电健康</span>
+    </div>`;
+}
+
+function replyStain() {
+  return `
+    <p>不同类型的污渍有不同的去除方法，选对方法才能事半功倍！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-shirt"></i> 常见污渍去除指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>油渍</strong> — 衣服干时涂上洗洁精，轻轻揉搓，静置 5 分钟后正常洗涤</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>血渍</strong> — 用冷水浸泡 30 分钟（千万不要用热水！），再加酶洗衣粉清洗</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>茶渍/咖啡渍</strong> — 用白醋浸泡 10 分钟，或用牙膏涂抹后轻轻搓洗</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>笔渍</strong> — 喷上酒精静置 5 分钟，再用洗衣液搓洗</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>染色</strong> — 新染色的衣服用 84 消毒液稀释后浸泡 15 分钟（仅限白色衣物）</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 关键原则：刚沾上的污渍越早处理越容易去掉，千万别拖延！处理前先在不显眼处测试。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">去污技巧</span>
+      <span class="tag green">实用干货</span>
+    </div>`;
+}
+
+function replyDrain() {
+  return `
+    <p>厨房下水道堵塞很常见，大部分情况可以自己疏通，不需要请师傅！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-faucet-drip"></i> 下水道疏通指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>开水冲洗</strong> — 先倒一壶开水下去，很多油垢堵塞这一步就能解决</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>小苏打 + 白醋</strong> — 倒半杯小苏打，再倒半杯白醋，等待 15 分钟气泡反应分解油脂，再倒开水冲洗</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>皮搋子</strong> — 堵住溢水口，用皮搋子用力按压抽动，利用气压疏通</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>铁丝钩</strong> — 用铁丝弯一个小钩，伸进排水口勾出堵塞物</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>预防堵塞</strong> — 安装滤网拦住食物残渣，定期用热水冲洗管道</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 如果以上方法都无效，可能堵得比较深，建议使用专业管道疏通剂或联系维修师傅。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">管道疏通</span>
+      <span class="tag green">自己动手</span>
+    </div>`;
+}
+
+function replyGarbage() {
+  return `
+    <p>垃圾分类其实不难，记住 4 大类就行，下面是清晰易懂的分类指南：</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-recycle"></i> 垃圾分类指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num" style="background:#3b82f6">1</span><span><strong>可回收物（蓝色桶）</strong><br>纸张、塑料瓶、玻璃瓶、金属罐头、旧衣物、纸箱</span></div>
+        <div class="guide-step"><span class="guide-step-num" style="background:#eab308">2</span><span><strong>厨余垃圾（绿色桶）</strong><br>剩菜剩饭、果皮果核、菜叶、蛋壳、茶渣、咖啡渣</span></div>
+        <div class="guide-step"><span class="guide-step-num" style="background:#ef4444">3</span><span><strong>有害垃圾（红色桶）</strong><br>废电池、过期药品、灯管、油漆桶、指甲油、杀虫剂</span></div>
+        <div class="guide-step"><span class="guide-step-num" style="background:#6b7280">4</span><span><strong>其他垃圾（灰色桶）</strong><br>纸巾、烟蒂、一次性餐具、碎陶瓷、污损塑料袋</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 小口诀：「能卖钱的是可回收，会腐烂的是厨余，有毒害的是有害，剩下的就是其他」。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag blue">垃圾分类</span>
+      <span class="tag green">环保生活</span>
+    </div>`;
+}
+
+function replyCool() {
+  return `
+    <p>不用空调也能让家里变凉快，这些方法省钱又实用！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-temperature-low"></i> 无空调降温妙招</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>巧用窗帘</strong> — 白天拉上遮光窗帘，阻挡阳光让室内降温 3-5°C</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>夜间通风</strong> — 傍晚后打开窗户对流通风，排出白天积聚的热气</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>风扇妙用</strong> — 风扇前放一盆冰水或湿毛巾，吹出的风更凉快</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>减少热源</strong> — 关闭不用的电器，少用电磁炉/烤箱，改用微波炉或凉拌</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>身体降温</strong> — 在手腕、脖子、膝盖后侧等脉搏处敷冷毛巾，快速降温</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 如果还是太热要开空调，建议设定 26°C + 除湿模式，比 20°C 制冷更省电更舒适。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag blue">夏日降温</span>
+      <span class="tag green">省电技巧</span>
+    </div>`;
+}
+
+function replyOdor() {
+  return `
+    <p>家里有异味别担心，不同区域的异味有不同的去除方法：</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-spray-can-sparkles"></i> 去除异味指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>冰箱异味</strong> — 放橘子皮、柠檬片或小苏打开盖，1-2 天异味消失</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>卫生间异味</strong> — 在角落放一杯白醋，或使用咖啡渣除味</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>鞋柜异味</strong> — 放几个茶叶包或活性炭包，干燥剂和除味一举两得</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>厨房油烟味</strong> — 煮一锅开水加几片柠檬或白醋，水蒸气能带走空气中的异味</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>全屋清新</strong> — 白醋 + 清水按 1:1 装入喷壶，喷洒在窗帘和地毯上，自然晾干</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 从源头解决问题：定期通风、及时清理垃圾桶和下水口，异味自然就少了。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">去除异味</span>
+      <span class="tag green">清新家居</span>
+    </div>`;
+}
+
+function replyMosquito() {
+  return `
+    <p>夏天防蚊要从驱蚊和防护两方面入手，这几个方法效果都不错！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-shield-virus"></i> 居家防蚊指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>清除积水</strong> — 定期检查花盆托盘、阳台容器、地漏等，蚊子在积水中产卵繁殖</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>安装纱窗</strong> — 检查纱窗是否有破洞，缝隙处用密封条封好</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>植物驱蚊</strong> — 养几盆薄荷、驱蚊草、艾草，天然驱蚊效果好</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>物理驱蚊</strong> — 睡前点蚊香或用电蚊香液，配合蚊帐使用效果最佳</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>被咬处理</strong> — 用肥皂水清洗叮咬处，涂抹风油精或止痒膏缓解肿胀瘙痒</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 蚊子偏爱深色衣服，夏天出门尽量穿浅色长袖长裤，减少裸露皮肤面积。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">防蚊攻略</span>
+      <span class="tag green">夏日必备</span>
+    </div>`;
+}
+
+function replyPest() {
+  return `
+    <p>居家灭虫需要找到虫害来源，对症下药才能彻底解决！</p>
+    <div class="guide-card">
+      <div class="guide-card-title"><i class="fas fa-bugs"></i> 居家除虫指南</div>
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-step-num">1</span><span><strong>保持清洁</strong> — 及时清理食物残渣和垃圾，不留给虫子食物来源</span></div>
+        <div class="guide-step"><span class="guide-step-num">2</span><span><strong>封堵入口</strong> — 用密封胶封堵墙缝、水管缝隙、门窗裂缝等虫子入口</span></div>
+        <div class="guide-step"><span class="guide-step-num">3</span><span><strong>蟑螂专用</strong> — 使用硼酸土豆泥饵剂，或购买胶饵点在角落缝隙处</span></div>
+        <div class="guide-step"><span class="guide-step-num">4</span><span><strong>蚂蚁防治</strong> — 用白醋擦拭蚂蚁爬过的路线，或用硼砂 + 糖制成诱饵</span></div>
+        <div class="guide-step"><span class="guide-step-num">5</span><span><strong>预防为主</strong> — 定期打扫卫生、保持干燥通风、定期检查隐蔽角落</span></div>
+      </div>
+      <div class="guide-tip"><i class="fas fa-circle-info"></i> 如果虫害严重（大面积蟑螂或白蚁），建议联系专业除虫公司处理，效果更彻底。</div>
+    </div>
+    <div class="tag-list">
+      <span class="tag red">居家除虫</span>
+      <span class="tag green">防治结合</span>
+    </div>`;
+}
+</script>
+</body>
+</html>
