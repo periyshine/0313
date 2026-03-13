@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>居家生活助手</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #4f8cff;
+    --primary-light: #e8f0fe;
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #1d2939;
+    --text2: #667085;
+    --border: #e4e7ec;
+    --green: #12b76a;
+    --orange: #f79009;
+    --radius: 16px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 100px;
+  }
+
+  /* ===== 头部 ===== */
+  .header {
+    text-align: center;
+    padding: 28px 20px 18px;
+    background: linear-gradient(135deg, var(--primary), #7c5cfc);
+    border-radius: var(--radius);
+    color: #fff;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .header p { font-size: 13px; opacity: .85; }
+
+  /* ===== 快捷标签 ===== */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    padding: 8px 16px;
+    border-radius: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .tag:hover, .tag.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* ===== 输入区 ===== */
+  .input-bar {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    gap: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 480px;
+  }
+  .input-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    color: var(--text);
+  }
+  .input-bar input::placeholder { color: #b0b8c9; }
+  .input-bar button {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+  }
+  .input-bar button:hover { background: #3a75e8; }
+
+  /* ===== 对话消息 ===== */
+  .chat { display: flex; flex-direction: column; gap: 16px; }
+
+  .msg {
+    max-width: 92%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeUp .35s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user  { align-self: flex-end; }
+  .msg.assistant { align-self: flex-start; }
+
+  .bubble {
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.65;
+    word-break: break-word;
+  }
+  .msg.user .bubble {
+    background: var(--primary);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.assistant .bubble {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* 指引卡片 */
+  .guide-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    max-width: 92%;
+    animation: fadeUp .4s ease;
+  }
+  .guide-card .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--primary-light), #f3e8ff);
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .guide-card .card-head .icon {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .guide-card .card-body { padding: 14px 16px; }
+  .guide-card .step {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .guide-card .step:last-child { border-bottom: none; padding-bottom: 0; }
+  .guide-card .step:first-child { padding-top: 0; }
+  .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-text { flex: 1; color: var(--text); }
+  .step-text b { color: var(--primary); }
+
+  .card-footer {
+    padding: 10px 16px;
+    background: #fafbfc;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+  .card-footer button {
+    flex: 1;
+    padding: 8px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--text2);
+  }
+  .card-footer button:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+  .card-footer button.main-btn {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .card-footer button.main-btn:hover { background: #3a75e8; }
+
+  /* 打字指示器 */
+  .typing {
+    display: flex;
+    gap: 5px;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: fit-content;
+    border-bottom-left-radius: 4px;
+  }
+  .typing span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #aab2c5;
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink {
+    0%,80%,100% { opacity: .3; transform: scale(.85); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  /* 欢迎卡片 */
+  .welcome {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  }
+  .welcome .emoji-row { font-size: 36px; margin-bottom: 10px; }
+  .welcome h2 { font-size: 17px; margin-bottom: 6px; }
+  .welcome p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .welcome .quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .welcome .qa-btn {
+    padding: 12px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .welcome .qa-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+  }
+  .qa-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- 头部 -->
+  <div class="header">
+    <h1>🏠 居家生活助手</h1>
+    <p>说出你的日常需求，获取智能便捷指引</p>
+  </div>
+
+  <!-- 快捷分类 -->
+  <div class="tags" id="tags">
+    <span class="tag" data-cat="clean">🧹 清洁收纳</span>
+    <span class="tag" data-cat="cook">🍳 烹饪美食</span>
+    <span class="tag" data-cat="laundry">👔 衣物洗护</span>
+    <span class="tag" data-cat="repair">🔧 家务维修</span>
+    <span class="tag" data-cat="health">🌿 健康养生</span>
+    <span class="tag" data-cat="plant">🌱 绿植养护</span>
+    <span class="tag" data-cat="pet">🐾 宠物照料</span>
+    <span class="tag" data-cat="budget">💰 省钱妙招</span>
+  </div>
+
+  <!-- 对话区域 -->
+  <div class="chat" id="chat">
+    <div class="welcome">
+      <div class="emoji-row">👋</div>
+      <h2>你好，有什么可以帮你？</h2>
+      <p>你可以直接输入问题，或试试下面的快捷入口</p>
+      <div class="quick-actions">
+        <button class="qa-btn" onclick="ask('冰箱有异味怎么去除')">
+          <div class="qa-icon" style="background:#e8f5e9;">🧊</div>
+          <span>冰箱除味</span>
+        </button>
+        <button class="qa-btn" onclick="ask('衣服沾了油渍怎么洗掉')">
+          <div class="qa-icon" style="background:#fff3e0;">👕</div>
+          <span>油渍清洗</span>
+        </button>
+        <button class="qa-btn" onclick="ask('厨房水槽堵塞怎么办')">
+          <div class="qa-icon" style="background:#e3f2fd;">🚰</div>
+          <span>下水道疏通</span>
+        </button>
+        <button class="qa-btn" onclick="ask('失眠怎么快速入睡')">
+          <div class="qa-icon" style="background:#f3e5f5;">💤</div>
+          <span>改善睡眠</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部输入 -->
+<div class="input-bar">
+  <input id="input" type="text" placeholder="描述你的居家需求..." autocomplete="off" />
+  <button onclick="send()" aria-label="发送">➤</button>
+</div>
+
+<script>
+/* ===== 知识库 ===== */
+const KB = {
+  clean: {
+    '冰箱|除味|异味|味道': {
+      icon: '🧊',
+      title: '冰箱除味指南',
+      steps: [
+        '彻底清空冰箱，<b>丢弃过期食物</b>，用温水擦拭内壁',
+        '放入 <b>小苏打粉</b>（敞口盒装约50g）或 <b>橘皮/茶叶包</b> 吸附异味',
+        '取 <b>白醋 : 水 = 1:1</b> 喷洒冰箱内部及密封条，静置10分钟后擦净',
+        '在冷藏层放一条 <b>干毛巾</b> 吸湿，每2周更换一次',
+        '定期清洁排水孔（冰箱背部），避免积水滋生细菌'
+      ]
+    },
+    '马桶|堵塞|不通': {
+      icon: '🚽',
+      title: '马桶疏通指南',
+      steps: [
+        '先用 <b>皮搋子（马桶吸盘）</b> 对准排水口用力按压抽吸 5-6 次',
+        '若无效，倒入 <b>大半壶热水（约60°C）</b> 配合洗洁精，静置15分钟后冲水',
+        '可尝试用 <b>铁丝衣架</b> 前端弯勾探入管道，旋转拉出堵塞物',
+        '使用 <b>管道疏通剂</b>（按说明书用量），静置30分钟再冲水',
+        '如仍不通，联系专业管道疏通师傅，避免自行拆卸'
+      ]
+    },
+    '油烟机|油污|厨房油烟': {
+      icon: '💨',
+      title: '油烟机清洁指南',
+      steps: [
+        '先启动油烟机，喷洒 <b>专用油烟清洁剂</b> 在滤网上，静置5分钟',
+        '用 <b>60°C热水 + 洗洁精</b> 浸泡拆卸下来的滤网20分钟',
+        '用旧牙刷刷洗滤网缝隙，顽固油渍可用 <b>小苏打糊</b> 重点揉搓',
+        '擦拭机身和风扇叶片，注意 <b>断电操作</b>',
+        '每月深层清洁一次，日常饭后用湿布简单擦拭表面'
+      ]
+    }
+  },
+
+  cook: {
+    '米饭|煮饭|电饭煲': {
+      icon: '🍚',
+      title: '完美煮饭指南',
+      steps: [
+        '用量杯取米后放入盆中，加清水 <b>轻轻搓洗2-3遍</b> 即可（保留营养）',
+        '米和水的比例约为 <b>1 : 1.2</b>（手指测量法：水面刚好没过米面一个指节）',
+        '浸泡 <b>20-30分钟</b> 让米粒充分吸水，煮出来更饱满',
+        '按下煮饭键，煮好后 <b>焖10分钟</b> 再开盖，用饭勺松饭',
+        '技巧：加入几滴醋或油可让米饭更松散晶莹'
+      ]
+    },
+    '煎蛋|鸡蛋|荷包蛋|炒蛋': {
+      icon: '🍳',
+      title: '煎出完美鸡蛋',
+      steps: [
+        '选择 <b>中小火</b> 加热锅，倒入薄薄一层油',
+        '油热后 <b>转最小火</b>，打入鸡蛋（先打入小碗检查新鲜度）',
+        '煎2-3分钟至蛋白凝固，可用铲子 <b>轻轻浇水蒸汽</b> 帮助表面熟透',
+        '喜欢溏心的煎3分钟出锅，全熟可翻面再煎1分钟',
+        '技巧：新鲜鸡蛋蛋白更紧致，<b>盐出锅前撒</b> 避免出水'
+      ]
+    },
+    '红烧|红烧肉|五花肉': {
+      icon: '🥩',
+      title: '家常红烧肉秘籍',
+      steps: [
+        '五花肉切3cm方块，<b>冷水下锅焯水</b>，加料酒去腥，煮3分钟捞出',
+        '锅中少许油，放入肉块 <b>小火煸炒至出油微黄</b>（约5分钟）',
+        '加入 <b>冰糖/白糖炒糖色</b>，肉块裹上焦糖色',
+        '倒入没过肉的热水，加 <b>生抽2勺、老抽1勺、八角2个、桂皮1小段</b>',
+        '大火烧开后 <b>转小火慢炖60分钟</b>，最后大火收汁至浓稠即可'
+      ]
+    }
+  },
+
+  laundry: {
+    '油渍|油污|沾油': {
+      icon: '👕',
+      title: '衣物油渍去除指南',
+      steps: [
+        '新油渍立即用 <b>纸巾吸干</b>（按压不要擦，避免扩大面积）',
+        '在油渍处涂抹 <b>洗洁精</b>（比洗衣液去油力更强），静置10分钟',
+        '用旧牙刷 <b>轻刷</b> 油渍处，从外向中心刷洗',
+        '放入洗衣机正常洗涤，水温 <b>40°C以上</b> 效果更佳',
+        '顽固油渍可用 <b>小苏打+白醋糊</b> 覆盖，静置30分钟后水洗'
+      ]
+    },
+    '白衣|发黄|白衣服': {
+      icon: '👔',
+      title: '白衣服去黄指南',
+      steps: [
+        '将白衣服浸泡在 <b>温水 + 一杯小苏打</b> 中，浸泡2-4小时',
+        '取出后用 <b>柠檬汁+盐</b> 涂抹发黄处，在阳光下晒30分钟',
+        '正常洗涤时加入 <b>适量白醋</b>（代替柔顺剂）软化水质',
+        '晾晒时 <b>避免暴晒过久</b>，反晒效果更好',
+        '收衣后 <b>装深色口袋/盒子</b> 存放，避免氧化泛黄'
+      ]
+    }
+  },
+
+  repair: {
+    '水槽|下水道|堵塞|水管': {
+      icon: '🔧',
+      title: '水槽疏通指南',
+      steps: [
+        '先将 <b>水槽积水面上的杂物</b> 清理干净',
+        '倒入 <b>半杯小苏打 + 一杯白醋</b>，会产生泡沫反应覆盖管道',
+        '静置 <b>15分钟</b>，再倒入一壶 <b>热水（非开水）</b> 冲洗',
+        '用 <b>铁丝或管道疏通条</b> 旋转探入排水口，匀速取出异物',
+        '预防：使用 <b>过滤网</b> 拦截残渣，避免剩菜油污直接倒入'
+      ]
+    },
+    '墙面|裂缝|掉皮|墙皮': {
+      icon: '🏗️',
+      title: '墙面修补指南',
+      steps: [
+        '用 <b>刮刀铲除</b> 松动起皮的墙皮，露出坚实基层',
+        '裂缝处填补 <b>腻子粉</b>，用刮板抹平，比墙面略高一点',
+        '干透后（约24小时）用 <b>细砂纸</b> 打磨至与墙面平齐',
+        '涂刷 <b>底漆</b> 一遍，干后再涂面漆，颜色与原墙匹配',
+        '小裂缝也可用 <b>牙膏临时填充</b>，应急使用'
+      ]
+    }
+  },
+
+  health: {
+    '失眠|睡不着|入睡困难': {
+      icon: '💤',
+      title: '改善睡眠指南',
+      steps: [
+        '睡前 <b>1小时放下手机</b>，屏幕蓝光会抑制褪黑素分泌',
+        '尝试 <b>4-7-8呼吸法</b>：吸气4秒→屏息7秒→呼气8秒，重复3-4组',
+        '卧室温度调至 <b>18-22°C</b>，遮光窗帘营造黑暗环境',
+        '睡前可喝 <b>温牛奶/洋甘菊茶</b>，避免咖啡因和酒精',
+        '建立 <b>固定作息</b>，每天同一时间起床（含周末），坚持2周形成生物钟'
+      ]
+    },
+    '颈椎|脖子|肩膀酸|肩颈': {
+      icon: '💆',
+      title: '肩颈舒缓指南',
+      steps: [
+        '每工作 <b>45分钟</b> 起立活动5分钟，做颈部环绕运动',
+        '使用电脑时 <b>屏幕高度与视线平齐</b>，避免低头',
+        '每日做 <b>颈部拉伸</b>：下巴收拢→后仰→左右侧倾各保持15秒',
+        '热敷 <b>后颈部15分钟</b>（温度40-45°C），促进血液循环',
+        '选择高度合适的枕头，<b>仰睡拳头高、侧睡肩膀高</b>'
+      ]
+    }
+  },
+
+  plant: {
+    '绿萝|黄叶|养花|植物': {
+      icon: '🌱',
+      title: '室内绿植养护指南',
+      steps: [
+        '浇水遵循 <b>"见干见湿"</b> 原则：土表2cm干了再浇，浇则浇透',
+        '绿萝等耐阴植物放 <b>散射光处</b>，避免阳光直射',
+        '每月施一次 <b>稀薄液肥</b>（氮肥为主），促进叶片翠绿',
+        '黄叶及时剪除，检查是否 <b>浇水过多/光照不足/通风不佳</b>',
+        '定期 <b>擦拭叶片</b>（湿布），让植物更好光合作用'
+      ]
+    }
+  },
+
+  pet: {
+    '猫|猫砂|养猫': {
+      icon: '🐱',
+      title: '猫咪日常照料指南',
+      steps: [
+        '每天 <b>铲屎1-2次</b>，每周彻底更换猫砂并清洗砂盆',
+        '提供 <b>充足新鲜饮水</b>，建议使用流动饮水器增加饮水量',
+        '每日 <b>互动玩耍15-20分钟</b>，用逗猫棒满足狩猎天性',
+        '定期 <b>梳毛</b>（短猫每周1次，长猫每天1次），减少毛球症',
+        '每年体检1次，按时 <b>驱虫+疫苗</b>，注意异常食欲和行为变化'
+      ]
+    }
+  },
+
+  budget: {
+    '省电|电费|节约': {
+      icon: '💡',
+      title: '家庭省电指南',
+      steps: [
+        '空调设置 <b>26°C</b>，配合风扇使用体感相同且省电30%以上',
+        '使用 <b>LED灯泡</b>，比白炽灯省电80%，寿命也更长',
+        '电器待机也耗电，不使用时 <b>拔掉插头或用带开关插排</b>',
+        '洗衣机攒满再洗，使用 <b>低温/eco模式</b>，自然晾晒替代烘干',
+        '冰箱放7分满最省电，<b>避免频繁开门</b>，远离热源摆放'
+      ]
+    }
+  }
+};
+
+/* ===== 通用回复（未匹配到知识库时） ===== */
+const FALLBACKS = [
+  '这是个好问题！建议你：① 先确认问题具体表现 ② 上网搜索相关教程 ③ 必要时咨询专业人士',
+  '这个需求我可以给你一个通用建议：先观察问题的具体情况，记录关键细节，再针对性地寻找解决方案。',
+  '针对你的需求，这里有一些通用思路：从日常维护入手，保持良好习惯，出现问题时及时处理。'
+];
+
+/* ===== 核心逻辑 ===== */
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+let isProcessing = false;
+
+// 标签点击
+document.querySelectorAll('.tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    const cat = tag.dataset.cat;
+    const suggestions = {
+      clean: '家里怎么快速大扫除',
+      cook: '新手做菜入门有什么建议',
+      laundry: '不同材质衣服怎么洗',
+      repair: '家里常用的维修工具有哪些',
+      health: '居家可以做什么养生运动',
+      plant: '适合新手的室内绿植推荐',
+      pet: '刚养宠物需要注意什么',
+      budget: '居家有哪些省钱小妙招'
+    };
+    if (suggestions[cat]) ask(suggestions[cat]);
+    tag.classList.remove('active');
+  });
+});
+
+// 回车发送
+input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+function ask(text) {
+  input.value = text;
+  send();
+}
+
+function send() {
+  const text = input.value.trim();
+  if (!text || isProcessing) return;
+  isProcessing = true;
+  input.value = '';
+
+  // 用户消息
+  addMsg('user', text);
+
+  // 打字指示器
+  const typingEl = addTyping();
+
+  // 模拟AI处理延迟
+  setTimeout(() => {
+    typingEl.remove();
+    const guide = findGuide(text);
+    if (guide) {
+      addGuide(guide);
+    } else {
+      const reply = FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
+      addMsg('assistant', reply);
+    }
+    isProcessing = false;
+    chat.lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, 800 + Math.random() * 600);
+}
+
+function findGuide(text) {
+  for (const cat of Object.values(KB)) {
+    for (const [pattern, guide] of Object.entries(cat)) {
+      const keywords = pattern.split('|');
+      if (keywords.some(kw => text.includes(kw))) {
+        return guide;
+      }
+    }
+  }
+  return null;
+}
+
+function addMsg(role, content) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="bubble">${content}</div>`;
+  chat.appendChild(div);
+  chat.lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function addTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  chat.appendChild(div);
+  chat.lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return div;
+}
+
+function addGuide(guide) {
+  const div = document.createElement('div');
+  div.className = 'guide-card';
+
+  const stepsHTML = guide.steps.map((s, i) =>
+    `<div class="step">
+      <span class="step-num">${i + 1}</span>
+      <span class="step-text">${s}</span>
+    </div>`
+  ).join('');
+
+  div.innerHTML = `
+    <div class="card-head">
+      <div class="icon">${guide.icon}</div>
+      <span>${guide.title}</span>
+    </div>
+    <div class="card-body">${stepsHTML}</div>
+    <div class="card-footer">
+      <button onclick="copyGuide(this)">📋 复制指引</button>
+      <button class="main-btn" onclick="feedback('👍 有帮助')">👍 有帮助</button>
+      <button onclick="feedback('🔍 需要更多')">🔍 更多建议</button>
+    </div>
+  `;
+  chat.appendChild(div);
+}
+
+function copyGuide(btn) {
+  const card = btn.closest('.guide-card');
+  const title = card.querySelector('.card-head span').textContent;
+  const steps = Array.from(card.querySelectorAll('.step-text')).map((el, i) =>
+    `${i + 1}. ${el.textContent}`
+  ).join('\n');
+  const text = `${title}\n${'─'.repeat(20)}\n${steps}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => btn.textContent = '📋 复制指引', 1500);
+  });
+}
+
+function feedback(type) {
+  if (type === '🔍 需要更多') {
+    addMsg('user', '我想了解更多的相关建议');
+    const typingEl = addTyping();
+    setTimeout(() => {
+      typingEl.remove();
+      addMsg('assistant', '好的，你可以更具体地描述你的问题，比如：\n\n• 遇到问题的 <b>具体场景</b> 是什么？\n• 之前有没有尝试过什么方法？\n• 你的预算和时间有限制吗？\n\n这样我可以给出更有针对性的建议。');
+      isProcessing = false;
+    }, 600);
+  } else {
+    addMsg('assistant', '很高兴能帮到你！如果还有其他居家问题，随时问我 😊');
+  }
+}
+</script>
+</body>
+</html>
